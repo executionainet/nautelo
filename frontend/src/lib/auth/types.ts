@@ -21,6 +21,14 @@ export type UserRole =
   | "SERVICE_PROVIDER"
   | "STAFF";
 
+// The session/user-preference locale (uppercase, as the auth API returns it).
+// A second, unrelated locale union lives at lib/api/directory.ts's Locale
+// ("en" | "it" | "es", lowercase) — that one is the single source of truth
+// for the directory API's ?locale= contract and is intentionally not merged
+// with this one: they serve different APIs that happen to share a value set.
+// resolveLocale() in lib/i18n/directory.ts is case-insensitive and accepts
+// either casing, so it doubles as the conversion from LocaleCode to Locale
+// until something needs more than that.
 export type LocaleCode = "EN" | "IT" | "ES";
 
 export type EntityStatus = "DRAFT" | "PENDING" | "ACTIVE" | "SUSPENDED";

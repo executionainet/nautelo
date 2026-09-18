@@ -1,16 +1,12 @@
 import pytest
-from django.core.cache import cache
 from rest_framework.test import APIClient
 
 from accounts.enums import UserRole
 from accounts.tests.factories import make_user
-from platform_settings.models import FeatureFlag
-from platform_settings.services import feature_flag_cache_key
 from professionals.enums import ProfessionalProfileStatus
 from professionals.tests.factories import make_professional
 from services_catalog.models import LegacyDirectoryMapping
-from services_catalog.permissions import COMBINED_DIRECTORY_FLAG
-from services_catalog.tests.factories import make_legacy_mapping
+from services_catalog.tests.factories import disable_combined_directory, make_legacy_mapping
 
 ENDPOINT = "/api/v1/legacy/professional-redirect/"
 
@@ -108,6 +104,25 @@ def test_a_surviving_slug_resolves_without_a_mapping_row():
 
 
 @pytest.mark.django_db
+def test_a_changed_slug_resolves_via_the_mapping_rows_legacy_slug():
+    """Spec §14.3 step 4: when a provider's slug changed during migration, the
+    mapping row's legacy_slug is what makes the OLD slug redirect
+    deterministically — neither the numeric legacy_identifier nor the
+    profile's current slug match the old slug directly."""
+    pro = build_professional("z@example.com", slug="ocean-legal")
+    make_legacy_mapping(
+        legacy_identifier="700",
+        target=pro,
+        legacy_slug="ocean-legal-old",
+    )
+
+    response = APIClient().get(ENDPOINT, {"id": "ocean-legal-old"})
+
+    assert response.status_code == 200
+    assert response.data["url"] == "/services/professionals/ocean-legal/"
+
+
+@pytest.mark.django_db
 def test_a_mapping_to_a_non_active_profile_does_not_resolve():
     pro = build_professional(
         "x@example.com", slug="suspended-pro", status=ProfessionalProfileStatus.SUSPENDED
@@ -170,7 +185,6 @@ def test_the_same_legacy_identifier_is_allowed_in_a_different_kind():
 @pytest.mark.django_db
 def test_the_resolver_404s_when_the_rollout_flag_is_off():
     build_professional("f@example.com", slug="flagged-pro")
-    FeatureFlag.objects.filter(key=COMBINED_DIRECTORY_FLAG).update(is_enabled=False)
-    cache.delete(feature_flag_cache_key(COMBINED_DIRECTORY_FLAG))
+    disable_combined_directory()
 
     assert APIClient().get(ENDPOINT, {"id": "flagged-pro"}).status_code == 404

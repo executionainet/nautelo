@@ -1,15 +1,15 @@
 import pytest
-from django.core.cache import cache
 from rest_framework.test import APIClient
 
 from accounts.enums import UserRole
 from accounts.tests.factories import make_user
-from platform_settings.models import FeatureFlag
-from platform_settings.services import feature_flag_cache_key
 from professionals.enums import ProfessionalProfileStatus
 from professionals.tests.factories import make_professional
-from services_catalog.permissions import COMBINED_DIRECTORY_FLAG
-from services_catalog.tests.factories import make_professional_service, make_service_category
+from services_catalog.tests.factories import (
+    disable_combined_directory,
+    make_professional_service,
+    make_service_category,
+)
 
 # No autouse cache fixture here: the project-root backend/conftest.py clears the
 # whole cache around every test in the suite — both the feature-flag value and
@@ -238,7 +238,6 @@ def test_an_empty_directory_returns_an_empty_result_set_not_an_error():
 
 @pytest.mark.django_db
 def test_the_directory_404s_when_the_rollout_flag_is_off():
-    FeatureFlag.objects.filter(key=COMBINED_DIRECTORY_FLAG).update(is_enabled=False)
-    cache.delete(feature_flag_cache_key(COMBINED_DIRECTORY_FLAG))
+    disable_combined_directory()
 
     assert APIClient().get("/api/v1/professionals/").status_code == 404

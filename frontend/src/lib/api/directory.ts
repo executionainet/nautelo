@@ -18,6 +18,13 @@ const INTERNAL_SERVICE_SECRET = process.env.INTERNAL_SERVICE_SECRET ?? "";
 // The single source of truth for the locale union in the whole frontend: it is
 // the API contract's ?locale= parameter. lib/i18n/directory.ts imports and
 // re-exports this type rather than declaring a second, drifting copy.
+//
+// A second, unrelated locale union lives at lib/auth/types.ts's LocaleCode
+// ("EN" | "IT" | "ES", uppercase) — that one is the session/user-preference
+// value from the auth API and is intentionally not merged with this one (see
+// the note there). resolveLocale() in lib/i18n/directory.ts is case-insensitive
+// and accepts either casing, so it doubles as the conversion from LocaleCode to
+// Locale until something needs more than that.
 export type Locale = "en" | "it" | "es";
 
 export interface ServiceCategory {

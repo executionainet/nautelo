@@ -155,4 +155,15 @@ describe("PrimaryNav", () => {
     render(<PrimaryNav />);
     expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
   });
+
+  it("renders the services/professionals label from the locale dictionary", () => {
+    mockSession(ALL_FALSE, false, [], "IT");
+    render(<PrimaryNav />);
+    expect(
+      screen.getByRole("link", { name: "Servizi / Professionisti" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Services / Professionals" }),
+    ).not.toBeInTheDocument();
+  });
 });
