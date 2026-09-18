@@ -37,7 +37,7 @@ def test_no_test_flushes_the_shared_redis_db():
     pattern = re.compile(r"cache\.clear\(|flushdb|flushall", re.IGNORECASE)
     offenders = [
         str(path.relative_to(backend_root))
-        for path in backend_root.rglob("test_*.py")
+        for path in list(backend_root.rglob("test_*.py")) + list(backend_root.rglob("conftest.py"))
         if ".venv" not in path.parts
         and path != Path(__file__).resolve()
         and pattern.search(path.read_text(encoding="utf-8"))

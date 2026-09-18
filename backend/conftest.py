@@ -6,7 +6,7 @@ from django.core.cache import cache
 def clear_own_cache_keys():
     """Delete only the cache keys under this checkout's KEY_PREFIX.
 
-    Django's RedisCache.clear() is a FLUSHDB, which would also delete keys owned by
+    Django's RedisCache whole-cache clear wipes the entire Redis DB, which would also delete keys owned by
     other worktrees' concurrently running test suites sharing the same Redis DB.
     """
     prefix = settings.CACHES["default"]["KEY_PREFIX"]

@@ -29,7 +29,7 @@ CONTACT_FLAG_TEST_DESCRIPTION = "Spec 35.1 rollout flag for contact reveal."
 def _clear_messaging_caches():
     """Delete this package's OWN cache keys around every test.
 
-    Never `cache.clear()`. Django's RedisCache.clear() is a FLUSHDB, and this
+    Never clear the whole cache. Django's RedisCache whole-cache clear wipes the entire Redis DB, and this
     project's test Redis DB is shared by concurrently running worktrees - a
     whole-DB flush has already broken parallel suites here once, which is why
     backend/conftest.py was rewritten to scan and delete only its own
