@@ -1,8 +1,12 @@
+from django.core.cache import cache
+
+from platform_settings.services import feature_flag_cache_key, set_feature_flag
 from services_catalog.models import (
     LegacyDirectoryMapping,
     ProfessionalService,
     ServiceCategory,
 )
+from services_catalog.permissions import COMBINED_DIRECTORY_FLAG
 
 
 def make_service_category(
@@ -61,3 +65,22 @@ def make_legacy_mapping(
         resolution=resolution or LegacyDirectoryMapping.Resolution.MAPPED,
         **extra,
     )
+
+
+def _set_combined_directory_flag(is_enabled):
+    # set_feature_flag()'s own cache invalidation runs inside
+    # transaction.on_commit(), which never fires under pytest-django's default
+    # (non-transactional) @pytest.mark.django_db — its callbacks are simply
+    # discarded when the test's wrapping atomic block rolls back instead of
+    # committing. The explicit cache.delete() below is what actually makes the
+    # new value visible to is_feature_enabled() within the same test.
+    set_feature_flag(key=COMBINED_DIRECTORY_FLAG, is_enabled=is_enabled, actor=None)
+    cache.delete(feature_flag_cache_key(COMBINED_DIRECTORY_FLAG))
+
+
+def disable_combined_directory():
+    _set_combined_directory_flag(False)
+
+
+def enable_combined_directory():
+    _set_combined_directory_flag(True)

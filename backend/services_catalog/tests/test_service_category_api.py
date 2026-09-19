@@ -1,12 +1,10 @@
 import pytest
-from django.core.cache import cache
 from rest_framework.test import APIClient
 
 from common.throttling import HashedIPScopedRateThrottle
 from platform_settings.models import FeatureFlag
-from platform_settings.services import feature_flag_cache_key
 from services_catalog.permissions import COMBINED_DIRECTORY_FLAG
-from services_catalog.tests.factories import make_service_category
+from services_catalog.tests.factories import disable_combined_directory, make_service_category
 
 # No autouse cache fixture here: the project-root backend/conftest.py clears the
 # cache around every test in the suite (flag values and throttle counters alike).
@@ -92,8 +90,7 @@ def test_category_detail_404s_for_unknown_and_inactive_slugs():
 
 @pytest.mark.django_db
 def test_both_category_endpoints_404_when_the_rollout_flag_is_off():
-    FeatureFlag.objects.filter(key=COMBINED_DIRECTORY_FLAG).update(is_enabled=False)
-    cache.delete(feature_flag_cache_key(COMBINED_DIRECTORY_FLAG))
+    disable_combined_directory()
     client = APIClient()
 
     assert client.get("/api/v1/service-categories/").status_code == 404

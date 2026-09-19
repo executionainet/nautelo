@@ -6,7 +6,7 @@ import NotificationBell from "@/components/layout/NotificationBell";
 import { useSession } from "@/lib/auth/session";
 import type { PermissionKey } from "@/lib/auth/types";
 import { tConversations } from "@/lib/i18n/conversations";
-import { resolveLocale } from "@/lib/i18n/directory";
+import { resolveLocale, t } from "@/lib/i18n/directory";
 
 interface NavLink {
   href: string;
@@ -22,6 +22,10 @@ interface NavLink {
    * spec 28. Recorded as Known Limitation 18, beside the related observation
    * that the same six links point at pages that do not exist. */
   messageKey?: string;
+  /** Spec 37: a key in the directory message dictionary (DIRECTORY_MESSAGES),
+   * resolved per the viewer's locale. Used by the Services entry, whose copy
+   * already ships EN/IT/ES there. */
+  directoryKey?: string;
   permission?: PermissionKey;
   /** Some entries are gated on membership rather than on a spec 5 capability:
    * spec 5's table has no "broker dashboard" row, and an AGENT with every flag
@@ -33,7 +37,11 @@ interface NavLink {
 const LINKS: NavLink[] = [
   { href: "/boats/", label: "Boats" },
   { href: "/brokers/", label: "Brokers" },
-  { href: "/services/professionals/", label: "Services / Professionals" },
+  {
+    href: "/services/professionals/",
+    label: "Services / Professionals",
+    directoryKey: "nav.services_professionals",
+  },
   { href: "/financing/", label: "Financing" },
   // NOTE: /sell/ (create_private_listing) and /fleet/ (create_broker_listing)
   // are deliberately ABSENT until Phase 11/16 build those pages. See the note below.
@@ -92,7 +100,9 @@ export default function PrimaryNav() {
             >
               {link.messageKey
                 ? tConversations(locale, link.messageKey)
-                : link.label}
+                : link.directoryKey
+                  ? t(locale, link.directoryKey)
+                  : link.label}
             </Link>
           </li>
         ))}

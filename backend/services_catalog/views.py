@@ -143,16 +143,21 @@ class LegacyProfessionalRedirectView(APIView):
         if not legacy_id:
             raise DRFValidationError({"id": "This query parameter is required."})
 
-        mapping = (
-            LegacyDirectoryMapping.objects.filter(
-                legacy_kind=LegacyDirectoryMapping.LegacyKind.PROVIDER,
-                legacy_identifier=legacy_id,
-                resolution=LegacyDirectoryMapping.Resolution.MAPPED,
-                target_type=LegacyDirectoryMapping.TargetType.PROFESSIONAL_PROFILE,
-            )
-            .exclude(target_id=None)
-            .first()
-        )
+        provider_mappings = LegacyDirectoryMapping.objects.filter(
+            legacy_kind=LegacyDirectoryMapping.LegacyKind.PROVIDER,
+            resolution=LegacyDirectoryMapping.Resolution.MAPPED,
+            target_type=LegacyDirectoryMapping.TargetType.PROFESSIONAL_PROFILE,
+        ).exclude(target_id=None)
+
+        mapping = provider_mappings.filter(legacy_identifier=legacy_id).first()
+        if mapping is None:
+            # Spec §14.3 step 4: a slug that changed during migration still
+            # needs a deterministic redirect. The import command records the
+            # old slug on the mapping row (legacy_slug) precisely so this
+            # lookup has something to match when the identifier itself
+            # doesn't (e.g. an old URL built from the old slug, not the
+            # legacy numeric id).
+            mapping = provider_mappings.filter(legacy_slug=legacy_id).first()
 
         active = ProfessionalProfile.objects.filter(status=ProfessionalProfileStatus.ACTIVE)
         profile = (
